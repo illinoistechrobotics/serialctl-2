@@ -1,3 +1,3 @@
-[submodule "robot/arduino-cmake"]
-	path = robot/arduino-cmake
-	url = git://github.com/arduino-cmake/arduino-cmake.git
+[submodule "Arduino-CMake-NG"]
+	path = Arduino-CMake-NG
+	url = https://github.com/arduino-cmake/Arduino-CMake-NG.git
