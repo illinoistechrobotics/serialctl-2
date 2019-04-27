@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.8.2)
 set(CMAKE_TOOLCHAIN_FILE "${CMAKE_CURRENT_SOURCE_DIR}/../Arduino-CMake-NG/cmake/Arduino-Toolchain.cmake")
 set(AUTO_SET_SKETCHBOOK_PATH ON CACHE BOOL "Whether Arduino IDE's Sketchbook Location should be automatically found")
 
-project(example_robot VERSION 0.1.0)
+project(example_robot)
 
 set(BOARD_NAME uno CACHE STRING "The name of the arduino (e.g. \"uno\")")
 set(BOARD_CPU "" CACHE STRING "The arduino's CPU")
@@ -18,3 +18,6 @@ endif ()
 add_arduino_executable(example_robot main.cpp)
 
 set_target_upload_port(example_robot "${UPLOAD_PORT}")
+
+find_arduino_library(serialctl libraries/serialctl 3RD_PARTY)
+link_arduino_library(example_robot serialctl)
