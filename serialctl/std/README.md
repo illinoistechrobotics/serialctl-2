@@ -1,0 +1,4 @@
+# Std
+This folder includes pieces of the C++ standard library modified from LLVM 8's libc++, included to provide C++ standard library features that Arduino is otherwise missing.  The files have been modified to import using `""`s rather than `<>`s, as well as a few modifications at the top of `__config` and a few things that reference the `#define`s made by it.
+
+The main goal is to allow people to use things that they expect from the C++ standard library on the arduino project, if there's something you want that's missing here feel free to add the required files from the LLVM 8 libcxx repo and mess with them to make them compile for Arduino.
