@@ -2,9 +2,17 @@
 
 #include "Array.hpp"
 #include "ArrayReference.hpp"
-#include "std/tuple"
+#include "JoystickInputs.hpp"
 
 namespace serialctl {
+namespace internal {
+/**
+ * Get a JoystickInputs that is unlikely to cause the robot to do anything bad, used for estop
+ */
+constexpr serialctl::JoystickInputs safeJoystickInput() {
+	return {0, 0, 0, 0, 0};
+}
+} // namespace internal
 
 template <typename Subclass, int MaxPeriodicMethods>
 class Robot {
@@ -16,10 +24,25 @@ private:
 		uint16_t msDelay;
 		uint16_t timeTakenByMostRecentRun;
 	};
-	// method, msDelay, mostRecentRun, name
+
+	/**
+	 * Information about the periodic methods registered to run
+	 * (Modify this array using registerPeriodic and deletePeriodic)
+	 */
 	Array<PeriodicMethod, MaxPeriodicMethods> periodicMethods;
 
+	uint16_t timeTakenByLastOnReceivePacket = 0;
+
+	/**
+	 * The last joystick input, not affected by estop
+	 */
+	JoystickInputs lastJoystickInput = internal::safeJoystickInput();
+
+	bool estop = true;
+
 	Subclass& impl() { return *static_cast<Subclass *>(this); }
+
+	const Stream& SerComm() { return impl().SerComm(); }
 public:
 	Robot(): periodicMethods() {};
 
@@ -27,15 +50,20 @@ public:
 	 * The main setup function, should be called in the arduino setup function
 	 * Overridable, override to do things like register periodic methods and other robot subclass setup.
 	 */
-	virtual void setup() {
+	virtual void setup() = 0;
 
-	}
+	/**
+	 * Run once each time the robot gets a new joystick input from the control software.  The given joystick
+	 */
+	virtual void onReceivePacket(const JoystickInputs& joystick) = 0;
 
 	/**
 	 * The main loop function, should be called in the arduino loop function
 	 * Not overridable, register a periodic method instead of overriding.
 	 */
 	void loop() {
+		SerComm().read();
+
 		unsigned long start = millis();
 		for (auto& periodic : periodicMethods) {
 			if (periodic.method == nullptr) { continue; }
@@ -74,6 +102,15 @@ public:
 				item.method = nullptr;
 			}
 		}
+	}
+
+	/**
+	 * Gets the actual joystick input, not zeroed by estop.
+	 *
+	 * Use for checking buttons to turn things on and off, since you don't want those to get disabled by estop
+	 */
+	const JoystickInputs& getActualJoystick() {
+		return lastJoystickInput;
 	}
 };
 
