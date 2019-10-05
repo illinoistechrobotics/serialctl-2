@@ -1,0 +1,1 @@
+Shared files that should be used by both Arduino serialctl and computers to keep them in agreement over what various things are
