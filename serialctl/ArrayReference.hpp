@@ -12,7 +12,7 @@ namespace serialctl {
 /// Note: Make sure whatever this points to doesn't get deallocated before this!
 template <typename T>
 class ArrayReference {
-	const T* _start;
+	T* _start;
 	const size_t _size;
 public:
 	constexpr ArrayReference(): _start(nullptr), _size(0) {}

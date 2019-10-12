@@ -15,6 +15,7 @@ protected:
 	SizeType _size;
 public:
 	SizeType size() const { return _size; }
+	SizeType *sizePtr() { return &_size; }
 	SizeType capacity() const { return Capacity; }
 
 	T* data() { return _data; }
