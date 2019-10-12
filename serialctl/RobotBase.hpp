@@ -3,6 +3,7 @@
 #include "Array.hpp"
 #include "ArrayReference.hpp"
 #include "JoystickInputs.hpp"
+#include "Base64.hpp"
 
 namespace serialctl {
 namespace internal {
