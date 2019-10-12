@@ -68,4 +68,54 @@ public:
 	}
 };
 
+namespace internal {
+const uint8_t b64_alphabet[] PROGMEM = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                                       "abcdefghijklmnopqrstuvwxyz"
+                                       "0123456789+/";
+} // namespace internal
+
+class StreamingBase64Encoder {
+	Array<uint8_t, 3> buffer;
+	uint8_t size = 0;
+
+	static inline void a3_to_a4(uint8_t *a4, const uint8_t *a3) {
+		a4[0] = (a3[0] & 0xfc) >> 2;
+		a4[1] = ((a3[0] & 0x03) << 4) + ((a3[1] & 0xf0) >> 4);
+		a4[2] = ((a3[1] & 0x0f) << 2) + ((a3[2] & 0xc0) >> 6);
+		a4[3] = (a3[2] & 0x3f);
+	}
+
+	Array<uint8_t, 4> doConversion() {
+		Array<uint8_t, 4> output;
+		a3_to_a4(output.data(), buffer.data());
+		for (auto& byte : output) {
+			byte = pgm_read(internal::b64_alphabet + byte);
+		}
+		return output;
+	}
+public:
+	template <typename OutputCallback>
+	void addByte(uint8_t byte, OutputCallback outputCallback) {
+		buffer[size++] = byte;
+		if (size == buffer.size()) {
+			size = 0;
+			auto output = doConversion();
+			outputCallback(output);
+		}
+	}
+
+	template <typename OutputCallback>
+	void finalize(OutputCallback outputCallback) {
+		if (size == 0) { return; }
+		for (uint8_t i = size; i < buffer.size(); i++) {
+			buffer[i] = 0;
+		}
+		auto output = doConversion();
+		for (uint8_t i = size + 1; i < output.size(); i++) {
+			output[i] = '=';
+		}
+		outputCallback(output);
+	}
+};
+
 } // namespace serialctl

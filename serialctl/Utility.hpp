@@ -25,3 +25,21 @@ struct _UIntLargeEnoughFor {
 template <size_t Num> using UIntLargeEnoughFor = typename _UIntLargeEnoughFor<Num>::type;
 
 }
+
+#include <Arduino.h>
+
+static inline uint8_t pgm_read(const uint8_t *address) {
+	return pgm_read_byte((uintptr_t)address);
+}
+
+static inline uint16_t pgm_read(const uint16_t *address) {
+	return pgm_read_word((uintptr_t)address);
+}
+
+static inline uint32_t pgm_read(const uint32_t *address) {
+	return pgm_read_dword((uintptr_t)address);
+}
+
+static inline float pgm_read(const float *address) {
+	return pgm_read_float((uintptr_t)address);
+}
