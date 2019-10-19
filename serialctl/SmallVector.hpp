@@ -73,8 +73,11 @@ public:
 		_size = 0;
 	}
 
-	operator ArrayReference<T>() { return {_data, _size}; }
-	operator ArrayReference<const T>() const { return {_data, _size}; }
+	ArrayReference<T> asRef() { return {_data, _size}; }
+	ArrayReference<const T> asConstRef() { return {_data, _size}; }
+
+	operator ArrayReference<T>() { return asRef(); }
+	operator ArrayReference<const T>() const { return asConstRef(); }
 };
 
 } /* namespace serialctl */

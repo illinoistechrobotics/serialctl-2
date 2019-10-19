@@ -66,6 +66,10 @@ public:
 			}
 		}
 	}
+
+	inline void reset() {
+		size = 0;
+	}
 };
 
 namespace internal {
@@ -115,6 +119,10 @@ public:
 			output[i] = '=';
 		}
 		outputCallback(output);
+	}
+
+	inline void reset() {
+		size = 0;
 	}
 };
 

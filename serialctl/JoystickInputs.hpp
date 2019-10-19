@@ -2,6 +2,7 @@
 
 #include "shared/JoystickInputs.h"
 #include "Array.hpp"
+#include "Utility.hpp"
 
 namespace serialctl {
 struct JoystickInputs {
@@ -11,7 +12,7 @@ private:
 public:
 	explicit inline JoystickInputs(internal::JoystickInputs inputs):
 		sticks({inputs.stickRX, inputs.stickRY, inputs.stickLX, inputs.stickLY}),
-		buttons(uint16_t{inputs.btnhi} << 8 | uint16_t{inputs.btnlo})
+		buttons(concat_uint8(inputs.btnhi, inputs.btnlo))
 	{}
 
 	constexpr JoystickInputs(int8_t rx, int8_t ry, int8_t lx, int8_t ly, uint16_t btn):

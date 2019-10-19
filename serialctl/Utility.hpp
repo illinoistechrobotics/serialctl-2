@@ -1,5 +1,6 @@
 #pragma once
 
+#include <stdint.h>
 #include "std/type_traits"
 
 namespace serialctl {
@@ -24,7 +25,15 @@ struct _UIntLargeEnoughFor {
 
 template <size_t Num> using UIntLargeEnoughFor = typename _UIntLargeEnoughFor<Num>::type;
 
+static inline uint16_t concat_uint8(uint8_t high, uint8_t low) {
+	return uint16_t{high} << 8 | uint16_t{low};
 }
+
+static inline uint32_t concat_uint16(uint16_t high, uint16_t low) {
+	return uint32_t{high} << 16 | uint32_t{low};
+}
+
+} // namespace serialctl
 
 #include <Arduino.h>
 

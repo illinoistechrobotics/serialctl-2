@@ -4,6 +4,7 @@
 #include "ArrayReference.hpp"
 #include "JoystickInputs.hpp"
 #include "Base64.hpp"
+#include "PacketReceiver.hpp"
 
 namespace serialctl {
 namespace internal {
@@ -33,6 +34,9 @@ private:
 	Array<PeriodicMethod, MaxPeriodicMethods> periodicMethods;
 
 	uint16_t timeTakenByLastOnReceivePacket = 0;
+	unsigned long mostRecentOnReceivePacket;
+
+	PacketReceiver<63> packetReceiver;
 
 	/**
 	 * The last joystick input, not affected by estop
@@ -40,6 +44,10 @@ private:
 	JoystickInputs lastJoystickInput = internal::safeJoystickInput();
 
 	bool estop = true;
+
+	void handlePacket(ArrayReference<const uint8_t> packet) {
+		// TODO: Handle packet
+	}
 
 	Subclass& impl() { return *static_cast<Subclass *>(this); }
 
@@ -51,10 +59,18 @@ public:
 	 * The main setup function, should be called in the arduino setup function
 	 * Overridable, override to do things like register periodic methods and other robot subclass setup.
 	 */
-	virtual void setup() = 0;
+	virtual void setup() {
+		unsigned long start = millis();
+		JoystickInputs inputs = internal::safeJoystickInput();
+		onReceivePacket(inputs);
+		mostRecentOnReceivePacket = millis();
+		timeTakenByLastOnReceivePacket = mostRecentOnReceivePacket - start;
+	}
 
 	/**
-	 * Run once each time the robot gets a new joystick input from the control software.  The given joystick
+	 * Run once each time the robot gets a new joystick input from the control software.
+	 * The given joystick will be one with safe inputs (all buttons off and sticks centered) if the robot is in estop
+	 * If you're controlling something that you want to work during estop, use getActualJoystick
 	 */
 	virtual void onReceivePacket(const JoystickInputs& joystick) = 0;
 
@@ -63,7 +79,11 @@ public:
 	 * Not overridable, register a periodic method instead of overriding.
 	 */
 	void loop() {
-		SerComm().read();
+		if (SerComm().available()) {
+			packetReceiver.receive(SerComm().read(), [this](ArrayReference<const uint8_t> packet) {
+				handlePacket(packet);
+			});
+		}
 
 		unsigned long start = millis();
 		for (auto& periodic : periodicMethods) {
@@ -73,7 +93,9 @@ public:
 			unsigned long timer = millis();
 			(impl().*periodic.method)();
 			periodic.timeTakenByMostRecentRun = millis() - timer;
+			start = timer;
 		}
+
 	}
 
 	/**

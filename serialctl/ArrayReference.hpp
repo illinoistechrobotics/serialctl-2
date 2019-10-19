@@ -25,10 +25,18 @@ public:
 	constexpr T& operator[](size_t index) const { return _start[index]; }
 
 	constexpr operator ArrayReference<const T>() const { return ArrayReference<const T>(_start, _size); }
+
+	constexpr ArrayReference<T> dropLast(size_t count) {
+		return count <= _size ? ArrayReference<T>(_start, _size - count) : ArrayReference<T>(_start, 0);
+	}
+
+	constexpr ArrayReference<T> dropFirst(size_t count) {
+		return count <= _size ? ArrayReference<T>(_start + count, _size - count) : ArrayReference<T>(_start + _size, 0);
+	}
 };
 
 class ConstStringReference: public ArrayReference<const char> {
-	public:
+public:
 	using ArrayReference::ArrayReference;
 	ConstStringReference(): ArrayReference() {}
 	explicit ConstStringReference(ArrayReference<const char> array): ArrayReference(array) {}
