@@ -1,8 +1,5 @@
 #pragma once
 
-#ifndef Arduino_h
-#include <string>
-#endif
 #include "std/type_traits"
 
 namespace serialctl {
@@ -26,11 +23,11 @@ public:
 
 	constexpr operator ArrayReference<const T>() const { return ArrayReference<const T>(_start, _size); }
 
-	constexpr ArrayReference<T> dropLast(size_t count) {
+	constexpr ArrayReference<T> dropLast(size_t count) const {
 		return count <= _size ? ArrayReference<T>(_start, _size - count) : ArrayReference<T>(_start, 0);
 	}
 
-	constexpr ArrayReference<T> dropFirst(size_t count) {
+	constexpr ArrayReference<T> dropFirst(size_t count) const {
 		return count <= _size ? ArrayReference<T>(_start + count, _size - count) : ArrayReference<T>(_start + _size, 0);
 	}
 };
@@ -40,11 +37,7 @@ public:
 	using ArrayReference::ArrayReference;
 	ConstStringReference(): ArrayReference() {}
 	explicit ConstStringReference(ArrayReference<const char> array): ArrayReference(array) {}
-#ifdef Arduino_h
 	ConstStringReference(const String& string): ArrayReference{string.c_str(), string.length()} {}
-#else
-	ConstStringReference(const std::string& string): ConstArrayReference{string.c_str(), string.size()} {}
-#endif
 };
 
 class StringReference: public ArrayReference<char> {
