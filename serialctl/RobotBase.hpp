@@ -5,6 +5,7 @@
 #include "JoystickInputs.hpp"
 #include "Base64.hpp"
 #include "PacketReceiver.hpp"
+#include "shared/Messages.h"
 
 namespace serialctl {
 namespace internal {
@@ -45,8 +46,48 @@ private:
 
 	bool estop = true;
 
+	// Handles an incoming packet
+	// The packet should have already had its CRC16 verified and the CRC should not be included in the data passed to this method
 	void handlePacket(ArrayReference<const uint8_t> packet) {
-		// TODO: Handle packet
+		auto rest = packet.dropFirst(1);
+		switch (SerialctlOpcode(packet[0])) {
+			case SerialctlOpcode::identify:
+				// TODO: Implement this
+				break;
+			case SerialctlOpcode::identifyResponse:
+				// This is sent by the robot, we should never receive one
+				break;
+			case SerialctlOpcode::joystickData:
+				if (rest.size() == sizeof(internal::JoystickInputs)) {
+					lastJoystickInput = JoystickInputs(*reinterpret_cast<const internal::JoystickInputs *>(rest.begin()));
+					callOnReceivePacket();
+				}
+			case SerialctlOpcode::robotStatus:
+				// This is sent by the robot, we should never receive one
+				break;
+			case SerialctlOpcode::logMessage:
+				// This is sent by the robot, we should never receive one
+				break;
+			case SerialctlOpcode::errorMessage:
+				// This is sent by the robot, we should never receive one
+				break;
+			default:
+				// Currently ignores unknown messages
+				break;
+		}
+	}
+
+	void callOnReceivePacket() {
+		uint16_t start = millis();
+		if (estop) {
+			JoystickInputs safe = internal::safeJoystickInput();
+			onReceivePacket(safe);
+		}
+		else {
+			onReceivePacket(lastJoystickInput);
+		}
+		uint16_t stop = millis();
+		timeTakenByLastOnReceivePacket = stop - start;
 	}
 
 	Subclass& impl() { return *static_cast<Subclass *>(this); }
@@ -79,10 +120,23 @@ public:
 	 * Not overridable, register a periodic method instead of overriding.
 	 */
 	void loop() {
-		if (SerComm().available()) {
-			packetReceiver.receive(SerComm().read(), [this](ArrayReference<const uint8_t> packet) {
-				handlePacket(packet);
+		while (SerComm().available()) {
+			bool shouldStop = false;
+			packetReceiver.receive(SerComm().read(), [this, &shouldStop](ArrayReference<const uint8_t> packet) {
+				shouldStop = true;
+				if (packet.size() < 2) {
+					// Packet not big enough for CRC
+					return;
+				}
+				uint16_t crc = compute_crc16(packet.dropLast(2));
+				uint16_t givenCRC = concat_uint8(packet[packet.size() - 2], packet[packet.size() - 1]);
+				if (crc != givenCRC) {
+					// TODO: Report error
+					return;
+				}
+				handlePacket(packet.dropLast(2));
 			});
+			if (shouldStop) { break; }
 		}
 
 		unsigned long start = millis();

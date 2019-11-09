@@ -13,6 +13,9 @@ constexpr uint8_t PACKET_END   = 254;
 
 } // namespace internal
 
+// A class for receiving packets
+// Call its receive method with new bytes and a callback function that takes an ArrayReference<const uint8_t> and returns nothing
+// Each time a full packet is received, the callback function will be called with a reference to it.  The reference is valid until the next time receive is called.
 template<size_t BufferSize>
 class PacketReceiver {
 	SmallVector<uint8_t, BufferSize> recvBuffer;
@@ -26,11 +29,7 @@ public:
 		}
 		else if (byte == internal::PACKET_END) {
 			decoder.finalize(recvBuffer.asRef(), recvBuffer.sizePtr());
-			if (recvBuffer.size() < 2) { return; }
-			uint16_t crc = compute_crc16(recvBuffer.asRef().dropLast(2));
-			uint16_t givenCRC = concat_uint8(recvBuffer[recvBuffer.size() - 2], recvBuffer[recvBuffer.size() - 1]);
-			if (crc != givenCRC) { return; }
-			callback(recvBuffer.asRef().dropLast(2));
+			callback(recvBuffer.asRef());
 		}
 		else {
 			decoder.addByte(byte, recvBuffer.asRef(), recvBuffer.sizePtr());
